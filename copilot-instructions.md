@@ -1,0 +1,1 @@
+/Users/bohdanbatsenko/work/shopify/utd-theme/AGENTS.md

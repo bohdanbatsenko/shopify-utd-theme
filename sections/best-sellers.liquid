@@ -1,0 +1,337 @@
+{% schema %}
+{
+  "name": "Best Sellers",
+  "settings": [
+    {
+      "type": "text",
+      "id": "section_label",
+      "label": "Section Label"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Collection",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "text",
+          "id": "collection_title",
+          "label": "Collection Title"
+        },
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Best Sellers",
+      "category": "Custom"
+    }
+  ],
+  "max_blocks": 3
+}
+{% endschema %}
+
+<div class="best-sellers">
+  <h1>Test Beat Sellers</h1>
+  <div class="best-sellers__header">
+    <h2 class="best-sellers__label">{{ section.settings.section_label }}</h2>
+    <h3 class="best-sellers__title">{{ section.settings.title }}</h3>
+  </div>
+  <div class="best-sellers__content">
+    <div class="best-sellers__collections">
+      {% for block in section.blocks %}
+        {% assign collection = block.settings.collection %}
+        {% if collection %}
+          <div class="best-sellers__collection {% if forloop.first %}best-sellers__collection--active{% endif %}" data-collection-index="{{ forloop.index0 }}">
+            <span class="best-sellers__collection-name">{{ block.settings.collection_title | default: collection.title }}</span>
+            <span class="best-sellers__collection-arrow">→</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="best-sellers__product">
+      {% for block in section.blocks %}
+        {% assign collection = block.settings.collection %}
+        {% if collection %}
+          {% assign product = block.settings.product %}
+          {% if product == blank %}
+            {% assign product = collection.products.first %}
+          {% endif %}
+          <div class="best-sellers__product-content {% if forloop.first %}best-sellers__product-content--active{% endif %}" data-product-index="{{ forloop.index0 }}">
+            {% if product %}
+              <div class="best-sellers__product-image">
+                <a href="{{ product.url }}">
+                  <picture>
+                    <source srcset="{{ product.featured_image | img_url: '300x300' }} 1x, {{ product.featured_image | img_url: '600x600' }} 2x" media="(min-width: 768px)">
+                    <img src="{{ product.featured_image | img_url: '150x150' }}" alt="{{ product.title }}">
+                  </picture>
+                </a>
+                <div class="best-sellers__tags">
+                  {% for tag in product.tags limit: 3 %}
+                    <span class="best-sellers__tag {% if tag == 'Sale' %}best-sellers__tag--sale{% endif %}">{{ tag }}</span>
+                  {% endfor %}
+                </div>
+                <div class="best-sellers__actions">
+                  <button class="best-sellers__wishlist-button" data-product-name="{{ product.title }}">❤️</button>
+                  <button class="best-sellers__cart-button" data-product-id="{{ product.id }}" {% if product.available == false %}disabled{% endif %}>👁️</button>
+                </div>
+              </div>
+              <div class="best-sellers__product-info">
+                <a href="{{ product.url }}">
+                  <span class="best-sellers__product-name">{{ product.title }}</span>
+                </a>
+                <span class="best-sellers__product-price">{{ product.price | money }}</span>
+                {% if product.compare_at_price > product.price %}
+                  <span class="best-sellers__product-price--old">{{ product.compare_at_price | money }}</span>
+                {% endif %}
+              </div>
+            {% else %}
+              <p>No product available.</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+
+{% stylesheet %}
+.best-sellers {
+display: flex;
+flex-direction: column;
+padding: 20px;
+}
+
+.best-sellers__header {
+margin-bottom: 20px;
+}
+
+.best-sellers__label {
+font-size: 14px;
+color: #888;
+}
+
+.best-sellers__title {
+font-size: 24px;
+font-weight: bold;
+margin: 10px 0;
+}
+
+.best-sellers__content {
+display: flex;
+}
+
+.best-sellers__collections {
+flex: 1;
+border-right: 1px solid #ddd;
+padding-right: 20px;
+}
+
+.best-sellers__collection {
+display: flex;
+justify-content: space-between;
+padding: 10px 0;
+cursor: pointer;
+}
+
+.best-sellers__collection--active {
+font-weight: bold;
+}
+
+.best-sellers__collection-name {
+font-size: 16px;
+}
+
+.best-sellers__collection-arrow {
+font-size: 16px;
+}
+
+.best-sellers__product {
+flex: 2;
+padding-left: 20px;
+}
+
+.best-sellers__product-image {
+position: relative;
+}
+
+.best-sellers__tags {
+position: absolute;
+top: 10px;
+left: 10px;
+}
+
+.best-sellers__tag {
+background-color: #fff;
+padding: 5px;
+margin-right: 5px;
+border-radius: 3px;
+font-size: 12px;
+}
+
+.best-sellers__tag--sale {
+background-color: red;
+color: #fff;
+}
+
+.best-sellers__actions {
+position: absolute;
+top: 10px;
+right: 10px;
+}
+
+.best-sellers__wishlist-button,
+.best-sellers__cart-button {
+background: none;
+border: none;
+cursor: pointer;
+font-size: 18px;
+margin-left: 10px;
+}
+
+.best-sellers__product-info {
+margin-top: 10px;
+}
+
+.best-sellers__product-name {
+display: block;
+font-size: 18px;
+font-weight: bold;
+}
+
+.best-sellers__product-price {
+color: red;
+font-size: 16px;
+margin-right: 10px;
+}
+
+.best-sellers__product-price--old {
+text-decoration: line-through;
+color: #888;
+font-size: 14px;
+}
+.wishlist-modal {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+}
+.wishlist-modal__overlay {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.5);
+}
+.wishlist-modal__content {
+position: relative;
+background: white;
+padding: 20px;
+border-radius: 5px;
+width: 450px;
+text-align: center;
+}
+.wishlist-modal__close {
+position: absolute;
+top: 10px;
+right: 10px;
+background: none;
+border: none;
+font-size: 20px;
+cursor: pointer;
+}
+{% endstylesheet %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const collectionElements = document.querySelectorAll('.best-sellers__collection');
+    const productContents = document.querySelectorAll('.best-sellers__product-content');
+    const wishlistButtons = document.querySelectorAll('.best-sellers__wishlist-button');
+    const cartButtons = document.querySelectorAll('.best-sellers__cart-button');
+
+    collectionElements.forEach((collectionElement, index) => {
+      collectionElement.addEventListener('click', function() {
+        collectionElements.forEach(el => el.classList.remove('best-sellers__collection--active'));
+        productContents.forEach(el => el.classList.remove('best-sellers__product-content--active'));
+
+        collectionElement.classList.add('best-sellers__collection--active');
+        productContents[index].classList.add('best-sellers__product-content--active');
+      });
+    });
+
+    wishlistButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const productName = button.getAttribute('data-product-name');
+        showWishlistModal(productName);
+      });
+    });
+
+    cartButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const productId = button.getAttribute('data-product-id');
+        addToCart(productId);
+      });
+    });
+
+    function showWishlistModal(productName) {
+      const modal = document.createElement('div');
+      modal.className = 'wishlist-modal';
+      modal.innerHTML = `
+        <div class="wishlist-modal__overlay"></div>
+        <div class="wishlist-modal__content">
+          <p>${productName} has been added to your wishlist.</p>
+          <button class="wishlist-modal__close">×</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      document.body.style.overflow = 'hidden';
+
+      modal.querySelector('.wishlist-modal__close').addEventListener('click', closeModal);
+      modal.querySelector('.wishlist-modal__overlay').addEventListener('click', closeModal);
+
+      function closeModal() {
+        document.body.removeChild(modal);
+        document.body.style.overflow = '';
+      }
+    }
+
+    function addToCart(productId) {
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ items: [{ id: productId, quantity: 1 }] })
+      })
+              .then(response => response.json())
+              .then(data => {
+                console.log('Product added to cart:', data);
+              })
+              .catch(error => {
+                console.error('Error adding product to cart:', error);
+              });
+    }
+  });
+</script>
