@@ -25,6 +25,8 @@
     {% render 'meta-tags' %}
 
     {{ content_for_header }}
+    
+      {{ 'main.css' | asset_url | stylesheet_tag: preload: true }}
       {{ 'application.css' | asset_url | stylesheet_tag: preload: true }}
   </head>
 

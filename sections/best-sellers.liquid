@@ -47,65 +47,161 @@
 {% endschema %}
 
 <div class="best-sellers">
-  <h1>Test Beat Sellers</h1>
+  {% assign has_configured_collections = false %}
+  {% for block in section.blocks %}
+    {% if block.settings.collection %}
+      {% assign has_configured_collections = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
   <div class="best-sellers__header">
     <h2 class="best-sellers__label">{{ section.settings.section_label }}</h2>
     <h3 class="best-sellers__title">{{ section.settings.title }}</h3>
   </div>
   <div class="best-sellers__content">
     <div class="best-sellers__collections">
-      {% for block in section.blocks %}
-        {% assign collection = block.settings.collection %}
-        {% if collection %}
-          <div class="best-sellers__collection {% if forloop.first %}best-sellers__collection--active{% endif %}" data-collection-index="{{ forloop.index0 }}">
-            <span class="best-sellers__collection-name">{{ block.settings.collection_title | default: collection.title }}</span>
-            <span class="best-sellers__collection-arrow">→</span>
-          </div>
-        {% endif %}
-      {% endfor %}
+      <div class="best-sellers__collections-inner">
+        <div class="best-sellers__collections-title">
+          <p>Best sellers</p>
+          <h2>Trending Products</h2>
+        </div>
+        <div class="best-sellers__collections-list">
+          {% if has_configured_collections %}
+            {% assign collection_index = 0 %}
+            {% for block in section.blocks %}
+              {% assign collection = block.settings.collection %}
+              {% if collection %}
+                {% assign collection_index = collection_index | plus: 1 %}
+                <div class="best-sellers__collection {% if collection_index == 1 %}best-sellers__collection--active{% endif %}" data-collection-index="{{ collection_index | minus: 1 }}">
+                  <span class="best-sellers__collection-name">{{ block.settings.collection_title | default: collection.title }}</span>
+                  <span class="best-sellers__collection-arrow">→</span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            {% assign collection_index = 0 %}
+            {% for collection in collections %}
+              {% if collection.products_count > 0 %}
+                {% assign collection_index = collection_index | plus: 1 %}
+
+                  <div class="best-sellers__collection {% if collection_index == 1 %}best-sellers__collection--active{% endif %}" data-collection-index="{{ collection_index | minus: 1 }}">
+                    <span class="best-sellers__collection-name">{{ collection.title }}</span>
+                    <span class="best-sellers__collection-arrow">→</span>
+                  </div>
+
+                {% if collection_index == 3 %}
+                  {% break %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
     </div>
     <div class="best-sellers__product">
-      {% for block in section.blocks %}
-        {% assign collection = block.settings.collection %}
-        {% if collection %}
-          {% assign product = block.settings.product %}
-          {% if product == blank %}
-            {% assign product = collection.products.first %}
-          {% endif %}
-          <div class="best-sellers__product-content {% if forloop.first %}best-sellers__product-content--active{% endif %}" data-product-index="{{ forloop.index0 }}">
-            {% if product %}
-              <div class="best-sellers__product-image">
-                <a href="{{ product.url }}">
-                  <picture>
-                    <source srcset="{{ product.featured_image | img_url: '300x300' }} 1x, {{ product.featured_image | img_url: '600x600' }} 2x" media="(min-width: 768px)">
-                    <img src="{{ product.featured_image | img_url: '150x150' }}" alt="{{ product.title }}">
-                  </picture>
-                </a>
-                <div class="best-sellers__tags">
-                  {% for tag in product.tags limit: 3 %}
-                    <span class="best-sellers__tag {% if tag == 'Sale' %}best-sellers__tag--sale{% endif %}">{{ tag }}</span>
-                  {% endfor %}
-                </div>
-                <div class="best-sellers__actions">
-                  <button class="best-sellers__wishlist-button" data-product-name="{{ product.title }}">❤️</button>
-                  <button class="best-sellers__cart-button" data-product-id="{{ product.id }}" {% if product.available == false %}disabled{% endif %}>👁️</button>
-                </div>
-              </div>
-              <div class="best-sellers__product-info">
-                <a href="{{ product.url }}">
-                  <span class="best-sellers__product-name">{{ product.title }}</span>
-                </a>
-                <span class="best-sellers__product-price">{{ product.price | money }}</span>
-                {% if product.compare_at_price > product.price %}
-                  <span class="best-sellers__product-price--old">{{ product.compare_at_price | money }}</span>
-                {% endif %}
-              </div>
-            {% else %}
-              <p>No product available.</p>
+      {% if has_configured_collections %}
+        {% assign product_index = 0 %}
+        {% for block in section.blocks %}
+          {% assign collection = block.settings.collection %}
+          {% if collection %}
+            {% assign product = block.settings.product %}
+            {% if product == blank %}
+              {% assign product = collection.products.first %}
             {% endif %}
-          </div>
-        {% endif %}
-      {% endfor %}
+            {% assign product_index = product_index | plus: 1 %}
+            <div class="best-sellers__product-content {% if product_index == 1 %}best-sellers__product-content--active{% endif %}" data-product-index="{{ product_index | minus: 1 }}">
+              {% if product %}
+                {% assign product_variant = product.selected_or_first_available_variant %}
+                <div class="best-sellers__product-image">
+                  <a href="{{ product.url }}">
+                    <picture>
+                      <source srcset="{{ product.featured_image | image_url: width: 300, height: 300 }} 1x, {{ product.featured_image | image_url: width: 600, height: 600 }} 2x" media="(min-width: 768px)">
+                      <img src="{{ product.featured_image | image_url: width: 150, height: 150 }}" alt="{{ product.title | escape }}" width="150" height="150">
+                    </picture>
+                  </a>
+                  <div class="best-sellers__tags">
+                    {% for tag in product.tags limit: 3 %}
+                      <span class="best-sellers__tag {% if tag == 'Sale' %}best-sellers__tag--sale{% endif %}">{{ tag }}</span>
+                    {% endfor %}
+                  </div>
+                  <div class="best-sellers__actions">
+                    <button class="best-sellers__wishlist-button" data-product-name="{{ product.title }}">
+                      {{ 'heart.svg' | inline_asset_content }}
+                    </button>
+                    <button class="best-sellers__cart-button" data-product-id="{{ product_variant.id }}" {% if product.available == false %}disabled{% endif %}>
+                      {{ 'eye.svg' | inline_asset_content }}
+                    </button>
+                  </div>
+                </div>
+                <div class="best-sellers__product-info">
+                  <a href="{{ product.url }}">
+                    <span class="best-sellers__product-name">{{ product.title }}</span>
+                  </a>
+                  <span class="best-sellers__product-price">{{ product.price | money }}</span>
+                  {% if product.compare_at_price > product.price %}
+                    <span class="best-sellers__product-price--old">{{ product.compare_at_price | money }}</span>
+                  {% endif %}
+                </div>
+              {% else %}
+                <p>No product available.</p>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {% assign product_index = 0 %}
+        {% for collection in collections %}
+          {% if collection.products_count > 0 %}
+            {% assign product = collection.products.first %}
+            {% assign product_index = product_index | plus: 1 %}
+            <div class="best-sellers__product-content {% if product_index == 1 %}best-sellers__product-content--active{% endif %}" data-product-index="{{ product_index | minus: 1 }}">
+              {% if product %}
+                {% assign product_variant = product.selected_or_first_available_variant %}
+                <div class="best-sellers__product-image">
+                  <a href="{{ product.url }}">
+                    <picture>
+                      <source srcset="{{ product.featured_image | image_url: width: 300, height: 300 }} 1x, {{ product.featured_image | image_url: width: 600, height: 600 }} 2x" media="(min-width: 768px)">
+                      <img src="{{ product.featured_image | image_url: width: 150, height: 150 }}" alt="{{ product.title | escape }}" width="150" height="150">
+                    </picture>
+                  </a>
+                  <div class="best-sellers__tags">
+                    {% for tag in product.tags limit: 3 %}
+                      <span class="best-sellers__tag {% if tag == 'Sale' %}best-sellers__tag--sale{% endif %}">{{ tag }}</span>
+                    {% endfor %}
+                  </div>
+                  <div class="best-sellers__actions">
+                    <button class="best-sellers__wishlist-button" data-product-name="{{ product.title }}">
+                      {{ 'heart.svg' | inline_asset_content }}
+                    </button>
+                    <button class="best-sellers__cart-button" data-product-id="{{ product_variant.id }}" {% if product.available == false %}disabled{% endif %}>
+                      {{ 'eye.svg' | inline_asset_content }}
+                    </button>
+                  </div>
+                </div>
+                <div class="best-sellers__product-info">
+                  <a href="{{ product.url }}">
+                    <span class="best-sellers__product-name">{{ product.title }}</span>
+                  </a>
+                  <span class="best-sellers__product-price">{{ product.price | money }}</span>
+                  {% if product.compare_at_price > product.price %}
+                    <span class="best-sellers__product-price--old">{{ product.compare_at_price | money }}</span>
+                  {% endif %}
+                </div>
+              {% else %}
+                <p>No product available.</p>
+              {% endif %}
+            </div>
+            {% if product_index == 3 %}
+              {% break %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if product_index == 0 %}
+        <p>No products available.</p>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -113,9 +209,11 @@
 
 
 {% stylesheet %}
-.best-sellers {
+/* .best-sellers {
 display: flex;
 flex-direction: column;
+max-width: 1280px;
+margin: 0 auto;
 padding: 20px;
 }
 
@@ -136,12 +234,49 @@ margin: 10px 0;
 
 .best-sellers__content {
 display: flex;
+align-items: stretch;
 }
 
 .best-sellers__collections {
-flex: 1;
+flex: 0 0 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+max-width: 50%;
+min-width: 0;
+box-sizing: border-box;
 border-right: 1px solid #ddd;
-padding-right: 20px;
+padding-right: 30px;
+}
+
+.best-sellers__collections-inner {
+width: 100%;
+max-width: 420px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+text-align: center;
+gap: 20px;
+}
+.best-sellers__collections-title {
+  align-self: flex-start;
+}
+.best-sellers__collections-title p {
+margin: 0;
+text-align: left;
+font-size: 14px;
+color: #888;
+}
+
+.best-sellers__collections-title h2 {
+margin: 8px 0 0;
+font-size: 28px;
+line-height: 1.2;
+}
+
+.best-sellers__collections-list {
+width: 100%;
 }
 
 .best-sellers__collection {
@@ -164,25 +299,58 @@ font-size: 16px;
 }
 
 .best-sellers__product {
-flex: 2;
+flex: 0 0 50%;
+max-width: 50%;
+min-width: 0;
+box-sizing: border-box;
 padding-left: 20px;
 }
 
-.best-sellers__product-image {
+.best-sellers__product-content {
+display: none;
 position: relative;
+width: 100%;
+aspect-ratio: 1 / 1;
+min-height: 320px;
+max-height: 600px;
+border-radius: 12px;
+overflow: hidden;
+}
+
+.best-sellers__product-content--active {
+display: block;
+}
+
+.best-sellers__product-image {
+position: absolute;
+inset: 0;
+z-index: 0;
+}
+
+.best-sellers__product-image a,
+.best-sellers__product-image picture,
+.best-sellers__product-image img {
+display: block;
+width: 100%;
+height: 100%;
+}
+
+.best-sellers__product-image img {
+object-fit: cover;
 }
 
 .best-sellers__tags {
 position: absolute;
 top: 10px;
 left: 10px;
+z-index: 2;
 }
 
 .best-sellers__tag {
 background-color: #fff;
 padding: 5px;
 margin-right: 5px;
-border-radius: 3px;
+border-radius: 12px;
 font-size: 12px;
 }
 
@@ -190,24 +358,38 @@ font-size: 12px;
 background-color: red;
 color: #fff;
 }
-
+.best-sellers__tags,
+.best-sellers__actions {
+display: flex;
+flex-direction: column;
+}
 .best-sellers__actions {
 position: absolute;
 top: 10px;
 right: 10px;
+z-index: 2;
 }
 
 .best-sellers__wishlist-button,
 .best-sellers__cart-button {
-background: none;
+background-color: #fff;
 border: none;
+border-radius: 12px;
+padding: 8px;
 cursor: pointer;
 font-size: 18px;
 margin-left: 10px;
 }
 
 .best-sellers__product-info {
-margin-top: 10px;
+position: absolute;
+left: 12px;
+right: 12px;
+bottom: 12px;
+z-index: 2;
+background-color: #fff;
+border-radius: 12px;
+padding: 12px;
 }
 
 .best-sellers__product-name {
@@ -262,7 +444,7 @@ background: none;
 border: none;
 font-size: 20px;
 cursor: pointer;
-}
+} */
 {% endstylesheet %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -308,12 +490,21 @@ cursor: pointer;
       document.body.appendChild(modal);
       document.body.style.overflow = 'hidden';
 
+      function handleEscape(event) {
+        if (event.key == 'Escape') {
+          closeModal();
+        }
+      }
+
+      document.addEventListener('keydown', handleEscape);
+
       modal.querySelector('.wishlist-modal__close').addEventListener('click', closeModal);
       modal.querySelector('.wishlist-modal__overlay').addEventListener('click', closeModal);
 
       function closeModal() {
         document.body.removeChild(modal);
         document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleEscape);
       }
     }
 
@@ -325,13 +516,13 @@ cursor: pointer;
         },
         body: JSON.stringify({ items: [{ id: productId, quantity: 1 }] })
       })
-              .then(response => response.json())
-              .then(data => {
-                console.log('Product added to cart:', data);
-              })
-              .catch(error => {
-                console.error('Error adding product to cart:', error);
-              });
+        .then(response => response.json())
+        .then(data => {
+          console.log('Product added to cart:', data);
+        })
+        .catch(error => {
+          console.error('Error adding product to cart:', error);
+        });
     }
   });
 </script>
